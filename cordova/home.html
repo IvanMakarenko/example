@@ -1,0 +1,496 @@
+<template>
+    <div class="page" data-name="home">
+        <div class="page-content" style="padding: 0;">
+            <div id="map_canvas">
+                <div class="block text-align-center remove-after-init">
+                    <div class="preloader"></div>
+                </div>
+                <button class="button button-outline button-fill button-raised panel-open" data-panel="left">
+                    <img class="menu-icon" src="img/menu.png" width="20"/>
+                </button>
+                <button class="button button-outline button-fill button-raised button-navigate" @click="navigate">
+                    <i class="icon f7-icons">navigation</i>
+                </button>
+                {{#if user}}
+                    {{#js_if "this.user.role === ROLE_DRIVER && this.user.status == STATUS_CONFIRMED"}}
+                        <button class="hidden button button-outline button-fill button-raised button-working" @click="stopWorking">
+                            ||
+                        </button>
+                        <a href="/settings/" class="button button-outline button-fill button-raised button-working full-width">
+                            Start
+                        </a>
+                    {{/js_if}}
+                {{/if}}
+            </div>
+            <div class="block-footer">
+                {{#if statistic}}
+                    {{#js_if "this.user.role === ROLE_DRIVER"}}
+                    <div class="row">
+                        <span class="col badge color-black">
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/speed.png" width="20" />
+                                <div class="value distance-value">{{statistic.distance}}</div>
+                                <div class="description">kilometers</div>
+                            </div>
+                        </span>
+                        <span class="col badge color-black">
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/time.png" width="20" />
+                                <div class="value time-value">{{statistic.time}}</div>
+                                <div class="description">time</div>
+                            </div>
+                        </span>
+                        <span class="col badge color-black">
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/money.png" width="20" />
+                                <div class="value income-value">{{statistic.money}}$</div>
+                                <div class="description">money</div>
+                            </div>
+                        </span>
+                    </div>
+                    {{/js_if}}
+
+                    {{#js_if "this.user.role === ROLE_ADVERTISER"}}
+                    <div class="row">
+                        <span class="col badge color-black">
+                            <i class="icon f7-icons info_round">info_round</i>
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/display.png" width="20" />
+                                <div class="value value-views">{{statistic.views}}</div>
+                                <div class="description">views</div>
+                            </div>
+                        </span>
+                        <span class="col badge color-black">
+                            <i class="icon f7-icons info_round">info_round</i>
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/time.png" width="20" />
+                                <div class="value value-time">{{statistic.time}}</div>
+                                <div class="description">time</div>
+                            </div>
+                        </span>
+                        <span class="col badge color-black">
+                            <i class="icon f7-icons info_round">info_round</i>
+                            <div class="display-flex flex-vertical justify-content-center text-align-center">
+                                <img class="badge-icon" src="img/money.png" width="20" />
+                                <div class="value spend-value">{{statistic.money}}$</div>
+                                <div class="description">expenses</div>
+                            </div>
+                        </span>
+                    </div>
+                    {{/js_if}}
+                {{else}}
+                <!-- Otherwise show preloader -->
+                <div class="block block-strong text-align-center">
+                    <div class="preloader"></div>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+#map_canvas {
+    width: 100%;
+    height: calc(100% - 100px);
+    min-width: 200px !important;
+    min-height: 200px !important;
+}
+
+#map_canvas .button {
+    width: 40px;
+    height: 40px;
+    position: absolute;
+}
+#map_canvas .button .icon {
+    font-size: 20px;
+    color: white;
+}
+
+#map_canvas .panel-open {
+    left: 20px;
+    top: 20px;
+}
+
+#map_canvas .button-navigate {
+    right: 20px;
+    top: 20px;
+    padding: 0;
+}
+
+#map_canvas .button-working {
+    bottom: 20px;
+    right: 20px;
+}
+#map_canvas .button-working.full-width {
+    width: calc(100% - 20px - 20px) !important;
+}
+
+.block-footer {
+    margin: 10px 0;
+}
+.block-footer .badge {
+    height: 80px;
+}
+.block-footer .badge .badge-icon {
+    margin: 10px auto;
+}
+.block-footer .badge .info_round {
+    color: white;
+    position: absolute !important;
+    right: 8px;
+    top: 8px;
+    font-size: 10px;
+    opacity: .9;
+}
+</style>
+
+<script>
+return {
+    data: function() {
+        return {
+            is_working: app.data.is_working,
+            user: false,
+            statistic: false,
+            campains: false,
+
+            map: false,
+
+            /* Markers */
+            marker: null,
+            drivers: [],
+            polygons: {},
+        };
+    },
+
+    methods: {
+        navigate: function() {
+            var self = this;
+            var app = self.$app;
+
+            self.map.animateCamera({
+                target: {
+                    lat: app.data.location.latitude,
+                    lng: app.data.location.longitude
+                },
+                zoom: 12,
+                duration: 3000,
+            });
+        },
+
+        onChangeLocation: function(position) {
+            var self = this;
+            var app = self.$app;
+            var params = {
+                target: {
+                    lat: position.latitude,
+                    lng: position.longitude
+                },
+                duration: 1000,
+            };
+
+            if (self.user.role != ROLE_DRIVER || !self.marker || !self.map) {
+                return 1;
+            }
+
+            self.marker.setPosition(params.target);
+
+            if (position.speed > 0.5) {
+                if (position.speed > 20.0) {
+                    params.zoom = 15;
+                } if (position.speed > 2.0) {
+                    params.zoom = 17;
+                }
+
+                // if (position.bearing) {
+                //     params.bearing = position.bearing;
+                //     // @todo: Try rotate map to the next point
+                // }
+
+                self.map.moveCamera(params);
+            }
+        },
+
+        stopWorking: function() {
+            var self = this;
+            var app = self.$app;
+
+            app.data.is_working = 0;
+            app.methods.updateStatistic();
+            self.renderButton();
+        },
+        startWorking: function() {
+            var self = this;
+            var app = self.$app;
+            homeView.router.navigate({ name: 'settings' });
+        },
+
+        renderButton: function() {
+            if (app.data.is_working == 1) {
+                $$('button.button-working').removeClass('hidden');
+                $$('a.button-working').addClass('hidden');
+            } else {
+                $$('button.button-working').addClass('hidden');
+                $$('a.button-working').removeClass('hidden');
+            }
+        },
+
+        initialize: function() {
+            var self = this;
+            var app = self.$app;
+
+            var div = document.getElementById("map_canvas");
+            self.map = plugin.google.maps.Map.getMap(div, MAP_OPTIONS);
+
+            self.map.one(plugin.google.maps.event.MAP_READY, function() {
+                $$('.remove-after-init').remove();
+                if (self.user.role == ROLE_DRIVER) {
+                    self.addDriverMarker();
+                }
+                if (self.user.role == ROLE_ADVERTISER) {
+                    self.initCampains();
+                }
+                self.renderAreas();
+                if (typeof app.data.location.bearing !== 'undefined') {
+                    self.onChangeLocation(app.data.location);
+                }
+            });
+        },
+
+        addDriverMarker: function() {
+            var self = this;
+            var app = self.$app;
+            self.$setState({
+                marker: self.map.addMarker({
+                    position: {
+                        lat: app.data.location.latitude,
+                        lng: app.data.location.longitude
+                    },
+                    draggable: false,
+                    animation: plugin.google.maps.Animation.BOUNCE,
+                    icon: {
+                        url: 'img/map/driver.png',
+                        size: {
+                            width: 60,
+                            height: 60
+                        }
+                    }
+                }),
+            });
+        },
+
+        initCampains: function() {
+            var self = this;
+            var app = self.$app;
+            self.updateCampains();
+            self.updaterId = setInterval(self.updateCampains, 20 * 1000); // 20 sec
+
+            // self.map.addEventListener(plugin.google.maps.event.MAP_CLICK, function(latLng) {
+            //     app.data.areas.forEach(function(area) {
+            //         var polygon = self.polygons[area.id];
+            //         if (polygon && plugin.google.maps.geometry.poly.containsLocation(latLng, polygon.getPoints())) {
+            //             self.infoArea(area);
+            //         }
+            //     });
+            // });
+        },
+
+        renderAreas: function() {
+            var self = this;
+            var app = self.$app;
+            var areas = app.data.areas;
+
+            if (areas && self.map) {
+                var allPoints = [1,2,3];
+                allPoints = [];
+                var maxPoint = new plugin.google.maps.LatLng(0, 0);
+                var minPoint = new plugin.google.maps.LatLng(0, 0);
+                app.data.areas.forEach(function(area) {
+                    if (self.user.role == ROLE_ADVERTISER || area.high_demand) {
+                        var points = [1,2,3];
+                        points = [];
+                        area.coordinates.forEach(function(point) {
+                            var latLng = new plugin.google.maps.LatLng(point[1], point[0]);
+                            points.push(latLng);
+                            allPoints.push(latLng);
+                        });
+
+                        var color = 'transparent';
+                        if (area.campains) {
+                            area.campains.forEach(function(campain) {
+                                if (campain.balance < 1.01) {
+                                    color = '#e7666f44';
+                                }
+                            });
+                        }
+                        if (self.user.role === ROLE_DRIVER && area.high_demand) {
+                            color = '#e7666f44';
+                            var latLngBounds  = new plugin.google.maps.LatLngBounds(points);
+                            self.map.addMarker({
+                                title: 'High demand area!',
+                                position: latLngBounds.getCenter(),
+                                icon: {
+                                    url: 'img/map/lightning-red-50.png',
+                                    size: {
+                                        width: 50,
+                                        height: 50
+                                    }
+                                }
+                            });
+                        }
+
+                        self.map.addPolygon({
+                            points: points,
+                            fillColor: color,
+                            fillOpacity: .1,
+                            strokeColor: 'grey',
+                            strokeWidth: 3,
+                            clickable: true
+                        }, function(polygon) {
+                            self.polygons[area.id] = polygon;
+                            polygon.addEventListener(plugin.google.maps.event.POLYGON_CLICK, function() {
+                                self.infoArea(area);
+                            });
+                        });
+                    }
+                });
+
+                if (self.user.role == ROLE_ADVERTISER && allPoints.length > 0) {
+                    self.map.animateCamera({
+                        target: allPoints,
+                        duration: 3000
+                    });
+                }
+            } else {
+                setTimeout(self.renderAreas, 1000);
+            }
+        },
+
+        checkStatus: function() {
+            var self = this;
+            var app = self.$app;
+
+            if (self.user.status === STATUS_INACTIVE) {
+                app.dialog.alert('Check your email, and confirm it by link in mail.');
+            }
+            if (self.user.status === STATUS_ACTIVE) {
+                app.dialog.alert('To start driwing with us, fill in your profile and wait for confirmation.');
+            }
+            if (self.user.status === STATUS_WAIT_CONFIRM) {
+                app.dialog.alert('To start driwing wait untill our manager confirm your account info.');
+            }
+        },
+
+        infoArea: function(area) {
+            var self = this;
+            var app = self.$app;
+
+            if (self.user.role === ROLE_DRIVER && area.high_demand) {
+                return app.dialog.alert('This is high demand zone, being in it you will receive more quests');
+            }
+            if (typeof area.campains === 'undefined') {
+                return app.dialog.alert('There are any campains in this area!<br>Only social advertising.');
+            }
+            var names = '';
+            var balances = '';
+            var costs = '';
+            area.campains.forEach(function(campain) {
+                names += '<th class="numeric-cell">' + campain.title + '</th>';
+                balances += '<th class="numeric-cell"' +
+                    (campain.balance < 1.01 ? 'style="background: #e7666f;"' : '') +
+                    '>' + campain.balance + '$</th>';
+                costs += '<th class="numeric-cell">-' + campain.spentToday + '$</th>';
+            });
+
+            if (names === '') {
+                app.dialog.alert('There are any campain in area!');
+            } else {
+                app.dialog.alert('<div class="data-table">' +
+                    '<table>' +
+                        '<thead>' +
+                            '<tr>' +
+                                '<th class="label-cell">Name</th>' + names +
+                            '</tr>' +
+                        '</thead>' +
+                        '<tbody>' +
+                            '<tr>' +
+                                '<td class="label-cell">Balance</td>' + balances +
+                            '</tr>' +
+                            '<tr>' +
+                                '<td class="label-cell">Costs today</td>' + costs +
+                            '</tr>' +
+                        '</tbody>' +
+                    '</table>' +
+                '</div>');
+            }
+        },
+
+        updateCampains: function() {
+            var self = this;
+            var app = self.$app;
+
+            app.request.get(app.methods.getApiUrl('campain?expand=drivers,areas'), function(response) {
+                /** @todo: add updating campain info in areas array */
+                var campains = JSON.parse(response);
+                var bounds = [];
+
+                self.drivers.forEach(function(marker) {
+                    marker.remove();
+                });
+
+                var index = 0;
+                campains.forEach(function(campain) {
+                    campain.drivers.forEach(function(location) {
+                        bounds.push(location);
+                        self.map.addMarker({
+                            title: campain.title,
+                            position: location,
+                            // rotation: driver.rotation,
+                            icon: {
+                                url: 'img/map/campain-' + index + '.png',
+                                size: {
+                                    width: 20,
+                                    height: 40
+                                }
+                            }
+                        }, function(marker) {
+                            self.drivers.push(marker);
+                        });
+                    });
+                    index++;
+                });
+
+                self.$setState({
+                    campains: campains,
+                });
+            }, app.methods.alertApiError);
+        },
+    },
+
+    on: {
+        pageInit: function(e, page) {
+            var self = this;
+            var app = self.$app;
+
+            app.methods.setCurrentPage(self);
+        },
+        pageAfterIn: function(e, page) {
+            var self = this;
+            var app = self.$app;
+
+            self.checkStatus();
+            self.renderButton();
+            self.initialize();
+        },
+        pageBeforeOut: function(e, page) {
+            var self = this;
+            var app = self.$app;
+
+            if (self.map) {
+                self.map.remove();
+            }
+            clearInterval(self.updaterId);
+        },
+    },
+}
+</script>

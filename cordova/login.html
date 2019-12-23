@@ -1,0 +1,101 @@
+<template>
+    <div class="page" data-name="login">
+        <div class="navbar no-shadow">
+            <div class="navbar-inner navbar-inner-large">
+                <div class="left">
+                    <a href="#" class="link back">
+                        <i class="icon icon-back"></i>
+                        <span class="ios-only">Back</span>
+                    </a>
+                </div>
+                <div class="title">Login</div>
+                <div class="title-large">
+                    <div class="title-large-text">Login</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-content login-screen-content">
+            <div class="display-flex flex-vertical justify-content-space-between">
+                <div>
+                    <div class="content-rounded-top"></div>
+                    <form class="list" id="login-form">
+                        <ul>
+                            <li class="item-content item-input item-input-outline">
+                                <div class="item-inner">
+                                    <div class="item-title item-floating-label">Login</div>
+                                    <div class="item-input-wrap">
+                                        <input type="text" name="username" required validate>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="item-content item-input item-input-outline">
+                                <div class="item-inner">
+                                    <div class="item-title item-floating-label">Password</div>
+                                    <div class="item-input-wrap">
+                                        <input type="password" name="password" required validate>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="item-content">
+                                <div class="item-inner display-flex justify-content-flex-end">
+                                    <a href="/recovery-password/">Forgot your password?</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </form>
+                </div>
+                <div>
+                    <div class="block-footer">
+                        <a href="#" class="button button-large button-fill button-raised login-button" @click="login">
+                            Login
+                            <i class="icon f7-icons">chevron_right</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+return {
+    // Component Methods
+    methods: {
+        initialize: function() {
+            var self = this;
+            var app = self.$app;
+
+            if (typeof window.localStorage['loginForm.username'] !== 'undefined') {
+                var loginForm = {
+                    'username': window.localStorage['loginForm.username'],
+                    'password': window.localStorage['loginForm.password'],
+                };
+
+                app.form.fillFromData('#login-form', loginForm);
+                app.input.validateInputs("#login-form");
+            }
+        },
+
+        login: function() {
+            var self = this;
+            var app = self.$app;
+            var formData = app.form.convertToData('#login-form');
+            window.localStorage['loginForm.username'] = formData.username;
+            window.localStorage['loginForm.password'] = formData.password;
+
+            app.preloader.show();
+            app.request.post(app.methods.getApiUrl('site/login'), formData, function(data) {
+                data = JSON.parse(data);
+                app.methods.authClient(data);
+            }, app.methods.alertApiError);
+        },
+    },
+
+    // Page Events
+    on: {
+        pageAfterIn: function(e, page) {
+            this.initialize();
+        },
+    }
+}
+</script>
