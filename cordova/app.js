@@ -136,8 +136,8 @@ $$(document).on('deviceready', function() {
     document.addEventListener('backbutton', app.methods.onBackKeyDown, false);
     document.addEventListener('resume', app.methods.onResume, false);
     plugin.google.maps.environment.setEnv({
-        'API_KEY_FOR_BROWSER_RELEASE': 'AIzaSyDhOF_pw2lyZcvXkrXGu3NyRZHnqe2Sabw',
-        'API_KEY_FOR_BROWSER_DEBUG': 'AIzaSyDhOF_pw2lyZcvXkrXGu3NyRZHnqe2Sabw'
+        'API_KEY_FOR_BROWSER_RELEASE': '***',
+        'API_KEY_FOR_BROWSER_DEBUG': '***'
     });
 
     // Init default headers
