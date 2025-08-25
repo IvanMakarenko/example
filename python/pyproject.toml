@@ -1,0 +1,114 @@
+[tool.poetry]
+package-mode = false
+name = "leadflow-events-processor"
+version = "0.1.0"
+description = "Handle LeadFlow:PrivateSellers (FSBO) events of create / delete comments and contact marks for listing by company, to make available filter listings in API queries."
+authors = [
+    "Ivan Makarenko <shketiam@gmail.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+confluent-kafka = "^2.6.1"
+mysql-connector-python = "^8.4.0"
+orjson = "^3.10.12"
+pydantic = "^2.10.1"
+pydantic-settings = "^2.6.1"
+sentry-sdk = "^1.45.1"
+tenacity = "^8.5.0"
+pypika = "^0.48.9"
+
+[tool.poetry.group.lint.dependencies]
+mypy = "^1.13.0"
+ruff = "^0.3.7"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.3"
+pytest-mock = "^3.14.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "ASYNC", # flake8-async
+    "COM", # flake8-commas
+    "C4", # flake8-comprehensions
+    "ERA", # eradicate
+    "T20", # flake8-print
+    "Q", # flake8-quotes
+    "I", # isort
+    "N", # pep8-naming
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "D", # pydocstyle
+    "S", # flake8-bandit
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "RSE", # flake8-raise
+]
+extend-select = [
+    "D213",
+    "D400",
+    "D401",
+]
+ignore = [
+    "ANN003",
+    "ANN101",
+    "ANN102",
+    "ANN204",
+    "ANN401",
+    "B904",
+    "D200",
+    "D212",
+    "F722",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/__init__.py" = ["D104", "F401"]
+"*/test_*.py" = ["D205", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = true
+force-wrap-aliases = true
+combine-as-imports = true
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.mypy]
+python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = [
+    "confluent_kafka.*",
+    "pypika.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "*.settings"
+disable_error_code = "call-arg"
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = "arg-type"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
