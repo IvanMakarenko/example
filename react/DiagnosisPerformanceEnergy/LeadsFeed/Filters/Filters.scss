@@ -1,0 +1,52 @@
+@import '../../../../../ui-kit/theme/colors';
+
+.DPEFilters {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  &__row {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__column {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: start;
+    gap: 16px;
+  }
+
+  &__open,
+  &__reset {
+    border: 1px solid $cool-gray-200;
+  }
+
+  &__popover {
+    background: $white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    &Header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 24px;
+    }
+  }
+}
